@@ -141,8 +141,8 @@ e_imag_i = (imag(FRF_matrix(:,1))-imag(U(:,1))).^2;
 % s és d
 Nk = 100; % rugómerevség
 Nc = 100; % csillapítási tényező
-k_end = 10;
-c_end = 10;
+k_end = 2;
+c_end = 2;
 
 
 k_start = 0.01;
@@ -171,23 +171,22 @@ close(f)
 % asd = E_real_np_to_plot(1, 1);
 % surf(X, Y, E_real_np_to_plot(X, Y))
 %% surface plot
-X = linspace(k_start,k_end,Nk+1);
-Y = linspace(c_start,c_end,Nc+1);
-figure(1)
+X = linspace(k_start,alteration_k,k_end);
+Y = linspace(c_start,alteration_c,c_end);
 surf(X, Y, E_real_plot)
 
 
 
 %% plots
 
-calc_fig = figure(2);
+calc_fig = figure(1);
 %calc_plot = plot(abs(20*log10(abs(U(:,1)))));
 calc_plot = semilogy((abs(U).^20));
 
-figure(3)
+figure(2)
 measure_plot = semilogy((abs(FRF_matrix(:,1)).^20));
 
-figure(4)
+figure(3)
 e_plot = plot(e_test);
 
 %%

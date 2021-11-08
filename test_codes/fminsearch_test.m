@@ -13,8 +13,9 @@ figure()
 ezcontour(f, [-1000 1000 -1000 1000])
 figure()
 fy = f(x1,x2);
+
 % surf(x1,x2,f(x1,x2))
-surf(x1,x2,f(x1,x2))
+surf(x1,x2,f(x1, x2))
 
 fminsearch(f_2, [0 0])
 
