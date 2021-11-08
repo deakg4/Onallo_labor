@@ -1,0 +1,1 @@
+The attachment 'LG_Gen3_housing_acc_Fs_20kHz_21_07_13.mat' (2768181 bytes) has been removed because it contained the following unwanted file extension: 'mat'
