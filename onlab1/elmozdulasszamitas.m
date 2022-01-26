@@ -11,6 +11,7 @@ OMEGA = diag(sqrt(OMEGA2));
 %Nomega = 1000;
 %Kiertekeles = 1;
 omega = linspace(omegakezdo,OMEGA(end)*Kiertekeles,Nomega).';
+% omega = linspace(omegakezdo,Nomega,Nomega).';
 
 ALFA = zeros(Nomega,Ms);
 U = zeros(Ms,Nomega);

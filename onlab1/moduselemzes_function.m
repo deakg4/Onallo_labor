@@ -1,7 +1,7 @@
 %moduselemzes
 clc
 clear
-% close all
+close all
 clf
 
 %Jelmagyarázat:
@@ -22,9 +22,9 @@ visszacsatolt = 1;
 j = sqrt(-1);
 %m(5) = 5; %tömeg
 
-m = 1;
-k = 1;
-c = 0.00;
+m = 0.1;
+k = 10000000;
+c = 10;
 Ms = 18;
 
 %f - gerjesztések
@@ -34,7 +34,7 @@ f = 1;
 fnum = 1;
 omegakezdo = 0;
 Nomega = 10000;
-Kiertekeles = 3;
+Kiertekeles = 1.5;
 
 [M, K, C, FI, OMEGA2] = modusmatrixgenerator(m, k, c, Ms, visszacsatolt);
 
@@ -62,21 +62,22 @@ Kiertekeles = 3;
 
 
 hold on
+
 for n = 1:Ms
     U = U + FI(:,n).*ALFA(:,n).';
-    plot(omega,20*log10(abs(ALFA(:,n))))
-%     plot(omega,20*log10(abs(U(n,:))))
+%     plot(omega,20*log10(real(ALFA(:,n))))
+    plot(omega,20*log10(abs(U(n,:))))
 end
 hold off
 
-figure
-hold on
-plot(omega,20*log10(abs(U(17,:))))
-plot(omega,20*log10(abs(U(18,:))))
-plot(omega,20*log10(abs(U(1,:))))
-plot(omega,20*log10(abs(U(2,:))))
-plot(omega,20*log10(abs(U(3,:))))
-hold off
+% figure
+% hold on
+% plot(omega,20*log10(abs(U(17,:))))
+% plot(omega,20*log10(abs(U(18,:))))
+% plot(omega,20*log10(abs(U(1,:))))
+% plot(omega,20*log10(abs(U(2,:))))
+% plot(omega,20*log10(abs(U(3,:))))
+% hold off
 
 % hold on
 % nstart = 1;

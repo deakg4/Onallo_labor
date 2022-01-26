@@ -1,18 +1,23 @@
 function fRac = fullFrac(H1, H2, omega1,omega2)
-%FULLFRAC Summary of this function goes here
+%FULLFRAC calculate correlation bethween two frequency response functions.
 %   Detailed explanation goes here
-
-% kiszámolja két átviteli függvény correlációját.
-
+%
+% omega1 - kiértékelési tartomány kezdete
 % omega2 - kiértékelési tartomány ha 0 akkor a H1 függvény hosszában lesz
 % kiértékelve.
 % H1 - elsõ átviteli függvény
 % H2 - második átviteli függvény
 
-% omega1 = 1;
-if omega2 == 0
-    omega2 = length(H1);
-end
+ if ~exist('omega1','var')
+     % third parameter does not exist, so default it to something
+      omega1 = 1;
+ end
+
+ if ~exist('omega2','var')
+     % third parameter does not exist, so default it to something
+      omega2 = length(H1);
+ end
+
 % A változat
     szamlalo = ((abs(H1(omega1:omega2,1)'*H2(omega1:omega2,1)))^2);
     nevezo = ((H1(omega1:omega2,1)'*H1(omega1:omega2,1))*(H2(omega1:omega2,1)'*H2(omega1:omega2,1)));

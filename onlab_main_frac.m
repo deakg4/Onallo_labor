@@ -83,16 +83,19 @@ fullfrac = fullFrac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, k
 % ezt a fullfrac függvényt kell ábrázolnom k és c paraméterek mentén és az
 % így kapott felület írja le a hibafelületet.
 frac = Frac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3),3);
-E_frac_np =@(x) fullFrac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,10));
-E_frac_np_inv = @(x) (fullFrac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,10))).^(-1);
+mean_frac = mean(frac);
+prod_frac = prod(frac);
+
+E_mean_frac_np =@(x) mean(Frac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3),3));
+E_prod_frac_np = @(x) prod(Frac(FRF_matrix(f_start:f_end,1), elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3),3));
 
 
 %% surface generator
 % legyenek az iterációs változók
 % s és d
-Nk = 100; % rugómerevség
-Nc = 100; % csillapítási tényező
-k_end = 5;
+Nk = 20; % rugómerevség
+Nc = 20; % csillapítási tényező
+k_end = 200;
 c_end = 2;
 
 k_start = 0.1;
@@ -101,7 +104,7 @@ c_start = 0.01;
 alteration_k = (k_end-k_start)/(Nk-1);
 alteration_c = (c_end-c_start)/(Nc-1);
 
-E_frac_plot = zeros(Nk,Nc);
+E_mean_frac_plot = zeros(Nk,Nc);
 ki = 0;
 ci = 0;
 f = waitbar(0,'Calculate...');
@@ -110,7 +113,7 @@ for x = k_start:alteration_k:k_end
     ci = 0;
     for y = c_start:alteration_c:c_end
         ci=ci+1;
-        E_frac_plot(ki,ci) = E_frac_np([x y]);        
+        E_mean_frac_plot(ki,ci) = E_mean_frac_np([x y]);        
     end
     status = (ki*ci)/(Nk*Nc);
     waitbar(status ,f ,'Calculate...');
@@ -118,10 +121,8 @@ for x = k_start:alteration_k:k_end
 end
 close(f)
 
-fmin = fminsearch(E_frac_np, [2 0.1])
-e_min = E_frac_np(fmin)
 
-E_frac_plot_inv = zeros(Nk,Nc);
+E_prod_frac_plot = zeros(Nk,Nc);
 ki = 0;
 ci = 0;
 f = waitbar(0,'Calculate...');
@@ -130,49 +131,64 @@ for x = k_start:alteration_k:k_end
     ci = 0;
     for y = c_start:alteration_c:c_end
         ci=ci+1;
-        E_frac_plot_inv(ki,ci) = E_frac_np_inv([x y]);        
+        E_prod_frac_plot(ki,ci) = E_prod_frac_np([x y]);        
     end
     status = (ki*ci)/(Nk*Nc);
     waitbar(status ,f ,'Calculate...');
     pause(0.01)
 end
 close(f)
-fmax = fminsearch(E_frac_np_inv, [2 0.1])
-e_max = E_frac_np_inv(fmax)
-
-
-% a kapott eredményt érdemes lenne visszahelyettesíteni az elmozdulás
-% számító functionbe, mert akkor vizuálisan is lehetne látni a kiadott
-% minimumpontokon felvett érték hogyan néz ki.
 
 %% surface plot
 
 X = linspace(k_start,k_end-k_start,Nk);
 Y = linspace(c_start,c_end-c_start,Nc);
-figure(1)
-surf(X, Y, E_frac_plot_inv)
+% figure(1)
+% surf_frac_prod = surf(X, Y, E_prod_frac_plot);
+% ax1 = gca
+% title(ax1, 'Frac product surface')
 
-fmin = fminsearch(E_frac_np, [2 0.1])
-e_min = E_frac_np(fmin)
-fmax = fminsearch(E_frac_np_inv, [2 0.1])
-e_max = E_frac_np_inv(fmax)
+figure(2)
+surf_frac_mean = surf(X, Y, E_mean_frac_plot);
+title('Frac mean surface')
+
+%%
+% a kapott eredményt érdemes lenne visszahelyettesíteni az elmozdulás
+% számító functionbe, mert akkor vizuálisan is lehetne látni a kiadott
+% minimumpontokon felvett érték hogyan néz ki.
+
+f_mean_min = fminsearch(E_mean_frac_np, [200 0])
+e_mean_min = E_mean_frac_np(f_mean_min)
+f_prod_min = fminsearch(E_prod_frac_np, [200 0])
+e_prod_min = E_prod_frac_np(f_prod_min)
+
+U_optimum_1 = elmozdulasszamitas_optimum(m, f_mean_min(1), f_mean_min(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3);
+U_optimum_2 = elmozdulasszamitas_optimum(m, f_prod_min(1), f_prod_min(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3);
+
+
+
 
 %% plots
 
-calc_fig = figure(2);
-%calc_plot = plot(abs(20*log10(abs(U(:,1)))));
+figure(3);
 calc_plot = semilogy((abs(U).^20));
-
-figure(3)
-measure_plot = semilogy((abs(FRF_matrix(f_start:f_end,1)).^20));
+title('Calculated frf')
 
 figure(4)
-frac_plot = plot(frac);
+measure_plot = plot(20*log10(abs(FRF_matrix(f_start:f_end,1))));
+title('Measured frf')
 
 figure(5)
-surf(X, Y, E_frac_plot)
+frac_plot = plot(frac);
+title('frac')
 
+figure(6)
+optimum_plot_1 = semilogy((abs(U_optimum_1).^20));
+title('frac mean')
 
+figure(7)
+optimum_plot_2 = semilogy((abs(U_optimum_2).^20));
+title('frac product')
 
 %%
 visual = 0;
@@ -190,5 +206,3 @@ if visual == 1
         end
     end
 end
-
-%%

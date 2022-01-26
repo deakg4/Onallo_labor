@@ -1,5 +1,6 @@
 clc
 clear
+% close all
 filename = 'FreqRespForce_DP_0.txt';
 fem_frf = read_fem_frf_txt(filename);
 load('LG_Gen3_housing_acc_Fs_20kHz_21_07_13.mat');
@@ -20,23 +21,24 @@ load('LG_Gen3_housing_acc_Fs_20kHz_21_07_13.mat');
 %kszi_n = c(1)/2*m*omega_n - a rendszer n-edik módusához tartozó csillapítási
 %tényező
 
-visszacsatolt = 1;
+% A motor teljes tömege 282g = 0.282kg
+
+visszacsatolt = 1; % mivel ez egy motorház egy kör alakú visszacsatolt rendszerrel lehet modellezni.
 j = sqrt(-1);
+mhouse = 0.282; % az LG motorház össztömege
+k = 200000; % rugómerevség
+c = 0; % csillapítási tényező
+Ms = 18; % tömegpontok száma
+m = mhouse/Ms; % a tömegpontok tömege
+modal_numb = 1; % a kiértékelt tömegpont sorszáma
 
-m = 1;
-% 1.0e+09*[1.2530 1.4251]
-k = 1;
-c = 1;
-Ms = 18;
-
-%f - gerjesztések
-% F = zeros(Ms,1);
-% F(1) = 1;
-force = 1;
-force_pos = 1;
-omegakezdo = 0.1;
-Nomega = 10000;
-Kiertekeles = 1.5;
+force = 1; % az gerjesztő erő
+force_pos = 10; % a gerjesztő erő pozíciója
+omegakezdo = 0.1; % a kiértékelés kezdő frekvenciája, mivel az elején 
+% nagy értékről indul nem férne ki egy diagramba érdemes megvágni az elején
+Nomega = 2000; % a kiértékelési frekvencia tartomány
+Kiertekeles = 1.5; % a kiértékelés hossza normál esetben ezzel a szorzóval 
+% szorzom a legnagyobb módust így kényelmesen belefér a plotba de most nincs rá szükségem.
 
 % legenerálja a megadott paraméterekkel a mátrixokat
 % ez volt a régifgv de lecserélem egy másikra
@@ -52,12 +54,13 @@ Kiertekeles = 1.5;
 %U = U';
 
 % - új fgv, csak az elmozdulásokat adja vissza és egybevontam a két fgv:
-% function [Ut] = elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt, i)
+% function [Ut] = gyorsulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt, i)
 % - Ez a function számolja az amplitúdó elmozdulásokat frekvenciatartományban
 % egy tömegrugó rendszerben.
 % - Ennek a függvénynek a bemenő paramétereit kell optimalizálni, hogy
 % közelítsük vele a mért eredményeket.
-U = elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,3);
+U = gyorsulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt, modal_numb);
+%U_acc = (j*omega)^2;  % gyorsulás
 % igazóból csak a k és c paramétert kell optimalizálnunk, ehhez a fügvény
 % többi paraméterét meg kell adnunk és úgy meghívni.
 
@@ -66,41 +69,42 @@ U = elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega
 %% Első megoldás a függvények négyzetes hibáját próbálom optimalizálni - ez
 % a módszer nem vezet eredményre.
 
+f_start = 1; % a kezdő frekvenzia [1/s]
+f_end = Nomega; % a záró frekvencia [1/s]
+
 % legyen
 % k = x(1)
 % c = x(2)
-n = 1;
-p = 1;
-e_real_np =@(x) (real(FRF_matrix(:,n))-real(elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2 ;
-e_test = e_real_np([1 1]);
-E_real_np =@(x) sum((real(FRF_matrix(:,n))-real(elmozdulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
-E_test = E_real_np(1.0e+09*[1.2530 1.4251])
+n = modal_numb; % a mért FRF mérési pontjának száma
+p = modal_numb; % a számított FRF mérési pontjának száma
 
-fminsearch(E_real_np, [3 3])
-% E_real_np_to_plot =@(x1,x2) sum((real(FRF_matrix(:,n))-real(elmozdulasszamitas_optimum(m, x1, x2, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
+multiplier = mean(real(FRF_matrix(f_start:f_end,n))) / mean(real(U));
+
+e_real_np =@(x) (real(FRF_matrix(f_start:f_end,n))-real(gyorsulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2 ;
+e_test = e_real_np([1 1]);
+E_real_np =@(x) sum((real(FRF_matrix(f_start:f_end,n))-real(gyorsulasszamitas_optimum(m, x(1), x(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
+
+% E_real_np_to_plot =@(x1,x2) sum((real(FRF_matrix(:,n))-real(gyorsulasszamitas_optimum(m, x1, x2, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
 
 % Ellenőrzés, hogy a function jó eredményeket ad e vissza
-% e_test_manual = (real(FRF_matrix(:,n))-real(elmozdulasszamitas_optimum(m, 2, 3, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p)).^2) ;
-% E_test_manual = sum((real(FRF_matrix(:,n))-real(elmozdulasszamitas_optimum(m, 2, 3, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
+% e_test_manual = (real(FRF_matrix(:,n))-real(gyorsulasszamitas_optimum(m, 2, 3, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p)).^2) ;
+% E_test_manual = sum((real(FRF_matrix(:,n))-real(gyorsulasszamitas_optimum(m, 2, 3, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,p))).^2) ;
 % test ha ez csak 0 ból álló vektor akkor a két megoldás megegyezik:
 % e_diff = e_test_manual-e_real_np([2 3]);
 % erre meg simán 0-t kell kapni:
 % E_diff = E_test_manual-E_real_np([2 3]);
 % A function jó eredményt ad vissza
 
-
-
-
 % ki kell vonnunk egymásból a számolt elmozdulásokat és a mérési
 % eredményekből kapott elmozdulásokat frekvencia tartományban.
 
 % e_real_i = (real(FRF_matrix(:,1))-real(U(:,1))).^2;
-e_real_i = (real(FRF_matrix(:,1))-real(U(:,1))).^2;
+e_real_i = (real(FRF_matrix(f_start:f_end,1))-real(U(:,1))).^2;
 % ez egy vektort fog visszaadni ami frekvenciatartományban tartalmazza a
 % hibákat.
 
 % e_imag_i = (imag(FRF_matrix(:,1))-imag(U(:,1))).^2;
-e_imag_i = (imag(FRF_matrix(:,1))-imag(U(:,1))).^2;
+e_imag_i = (imag(FRF_matrix(f_start:f_end,1))-imag(U(:,1))).^2;
 % ez is egy vektort ad vissza ami tartalmazza frekvenciatartományban a
 % hibákat.
 
@@ -138,56 +142,81 @@ e_imag_i = (imag(FRF_matrix(:,1))-imag(U(:,1))).^2;
 
 %% surface generator
 % legyenek az iterációs változók
-% s és d
-Nk = 100; % rugómerevség
-Nc = 100; % csillapítási tényező
-k_end = 2;
-c_end = 2;
+% ki és ci
+Nk = 40; % rugómerevség
+Nc = 40; % csillapítási tényező
+
+k_start = 0; % k kezdőértéke
+k_end = 10000000; % k utolsó értéke
+
+c_start = 0; % c kezdőértéke
+c_end = 800; % c utolsó értéke
 
 
-k_start = 0.01;
-c_start = 0;
+alteration_k = (k_end-k_start)/Nk; % k osztása
+alteration_c = (c_end-c_start)/Nc; % c osztása
 
-alteration_k = (k_end-k_start)/Nk;
-alteration_c = (c_end-c_start)/Nc;
-
-E_real_plot = zeros(Nk,Nc);
-ki = 0;
-ci = 0;
-f = waitbar(0,'Please wait...');
-for x = k_start:alteration_k:k_end
-    ki=ki+1;
-    ci = 0;
-    for y = c_start:alteration_c:c_end
-        ci=ci+1;
-        E_real_plot(ki,ci) = E_real_np([x y]);        
+surface_plot = 1;
+if surface_plot == 1
+    E_real_plot = zeros(Nk,Nc); % egy Nk*Nc méretű mátrix a kapott eredményeknek.
+    ki = 0; % k futóváltozója
+    ci = 0; % c futóváltozója
+    f = waitbar(0,'Please wait...');
+    for x = k_start:alteration_k:k_end
+        ki=ki+1;
+        ci = 0;
+        for y = c_start:alteration_c:c_end
+            ci=ci+1;
+            E_real_plot(ki,ci) = E_real_np([x y]);        
+        end
+        status = (ki*ci)/(Nk*Nc);
+        waitbar(status ,f ,'Please wait...');
+        pause(0.01)
     end
-    status = (ki*ci)/(Nk*Nc);
-    waitbar(status ,f ,'Please wait...');
-    pause(0.01)
+    close(f)
 end
-close(f)
-% [X, Y] = meshgrid([0:0.1:10 0:0.1:10]);
-% asd = E_real_np_to_plot(1, 1);
-% surf(X, Y, E_real_np_to_plot(X, Y))
+
+%%
+% a kapott eredményt érdemes lenne visszahelyettesíteni az elmozdulás
+% számító functionbe, mert akkor vizuálisan is lehetne látni a kiadott
+% minimumpontokon felvett érték hogyan néz ki.
+
+f_min = fminsearch(E_real_np, [k c])
+E_min = E_real_np(f_min)
+
+U_optimum = gyorsulasszamitas_optimum(m, f_min(1), f_min(2), force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt,modal_numb);
+
 %% surface plot
-X = linspace(k_start,alteration_k,k_end);
-Y = linspace(c_start,alteration_c,c_end);
-surf(X, Y, E_real_plot)
-
-
+X = linspace(k_start,k_end,Nk+1);
+Y = linspace(c_start,c_end,Nc+1);
+figure(1)
+surf(X, Y, 20*log10(E_real_plot))
+title('error surface')
+xlabel('k')
+ylabel('c')
+zlabel('error')
 
 %% plots
 
-calc_fig = figure(1);
-%calc_plot = plot(abs(20*log10(abs(U(:,1)))));
-calc_plot = semilogy((abs(U).^20));
+figure(3);
+calc_plot = plot(20*log10(abs(U)));
+title('Calculated frf')
 
-figure(2)
-measure_plot = semilogy((abs(FRF_matrix(:,1)).^20));
+figure(4)
+measure_plot = plot(20*log10(abs(FRF_matrix(f_start:f_end,1))));
+title('Measured frf')
 
-figure(3)
-e_plot = plot(e_test);
+figure(5)
+e_real_i_plot = plot(20*log10(e_real_i));
+title('e real')
+
+figure(6)
+optimum_plot_1 = plot(20*log10(abs(U_optimum)));
+title('Optimum')
+
+% figure(7)
+% optimum_plot_2 = semilogy((abs(U_optimum_2).^20));
+% title('frac product')
 
 %%
 visual = 0;
@@ -222,3 +251,11 @@ pause(1)
 close(f)
 end
 %%
+
+% További ötletek:
+% Meg kell keresni az frf lokális maximumait ezek a lokális maximumok
+% ugyebár a sajátmódusok helyein lesznek mert ott száll el a gyorsulásunk.
+% Erre kell keresni valami fasza kis megoldást, hogyan lehet lokális
+% amximumokat keresni
+% FELADAT:
+% Lokális maximum keresésének irodalmazása.

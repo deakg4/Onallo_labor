@@ -41,5 +41,5 @@ if visszacsatolt == 1
 end
     %FI - 1-re normált sajátvektor - Fi_n -ek módusalakok
     %OMEGA2 - sajátértékek - omega_n_negyzetek
-    [FI,OMEGA2] = eig(M\K);
+    [FI, OMEGA2] = eig(M\K);
 end

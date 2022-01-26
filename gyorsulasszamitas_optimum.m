@@ -1,4 +1,4 @@
-function [Uti] = elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt, i)
+function [U_accti] = elmozdulasszamitas_optimum(m, k, c, force, force_pos, Ms, omegakezdo, Nomega, Kiertekeles, visszacsatolt, i)
 
 % Az optimumkereséshez létrehozott egyszerűbb fgv
 % ez volt az eredeti fgv, de módosítom, mert nincs szükségem ennyi kimenő
@@ -52,11 +52,11 @@ for n = 1:Ms
     U_acc = U_acc + U*(j*OMEGA(n)).^2;
 end
 
-% U_acc = U*(j*OMEGA(n)).^2;
-% U_acct = U_acc';
-% U_accti = U_acct(:,i);
-Ut = U';
-Uti = Ut(:,i);
+U_acc = U*(j*OMEGA(n)).^2;
+U_acct = U_acc';
+U_accti = U_acct(:,i);
+% Ut = U';
+% Uti = Ut(:,i);
 
 function [M, K, C, FI, OMEGA2] = modusmatrixgenerator(m, k, c, Ms, visszacsatolt)
 

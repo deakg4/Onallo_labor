@@ -6,8 +6,8 @@ function fRac = Frac(H1, H2, ablak)
 
 omega1 = 1;
 omega2 = length(H1);
-fRac = zeros(omega2,1);
-for omega = omega1:omega2-ablak
+fRac = zeros(omega2-ablak,1);
+for omega = omega1:(omega2-ablak)
 
     
 % B változat
